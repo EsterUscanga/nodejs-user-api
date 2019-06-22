@@ -66,6 +66,22 @@ function wichMethod(body) {
         return 'nombre'
 }
 
+function updateUser(index, newData, method) {
+    if (newData.id != undefined && method != 'id') {
+        usuarios[index].id = newData.id
+    }
+    if (newData.nombre != undefined && method != 'nombre') {
+        usuarios[index].nombre = newData.nombre
+    }
+    if (newData.apellido != undefined && method != 'nombre') {
+        usuarios[index].apellido = newData.apellido
+    }
+}
+
+function createData(body) {
+    return { "id": body.id, "nombre": body.nombre, "apellido": body.apellido }
+}
+
 /* Post usuario
  * No poder agregar un usuario repetido
  * Nombres sin números ni signos solo letras
@@ -184,10 +200,10 @@ app.get('/usuario/apellido/:apellido', function (req, res) {
  */
 
 app.delete('/usuario', function (req, res) {
-    let flag = false
     if (!areThereMany())
         res.send('No hay usuarios creados')
     else {
+        let flag = false
         let method = wichMethod(req.body)
         switch (method) {
             case 'id':
@@ -195,8 +211,6 @@ app.delete('/usuario', function (req, res) {
                     deleteUser(getIndexById(req.body.id))
                     move()
                     flag = true
-                } else {
-                    flag = false
                 }
                 break
 
@@ -206,62 +220,49 @@ app.delete('/usuario', function (req, res) {
                     move()
                     flag = true
                 }
-                else {
-                    flag = false
-                }
                 break
 
         }
+        if (flag)
+            res.send('Usuario ha sido eliminado')
+        else
+            res.send('No se ha encontrado ese usuario')
     }
-    if (flag)
-        res.send('Usuario ha sido eliminado')
-    else
-        res.send('No se ha encontrado ese usuario')
+
 
 })
 /*
  * Put usuario
  * Actualizar nombre y apellido 
- * Axgregar un tercer campo al request llamado "method" donde se podrá elegir actualizar por ID por nombre o por apellido
+ * Axgregar un tercer campo al request llamado "method" donde se podrá elegir actualizar por ID por nombre y por apellido
  */
 app.put('/usuario', function (req, res) {
-    if (areThereMany())
+    if (!areThereMany())
         res.send('No hay usuarios creados')
     else {
-        if (req.body.id != undefined) {
-            let aux = false
-            let i = 0
-            while (aux == false) {
-                if (req.body.id == usuarios[i].id) {
-                    aux = true
-                    if (req.body.nombre !== undefined && req.body.apellido !== undefined) {
-                        usuarios[i].nombre = req.body.nombre
-                        usuarios[i].apellido = req.body.apellido
-                        res.send('El usario ha sido actualizado')
-                    }
-                    else if (req.body.nombre !== undefined) {
-                        usuarios[i].nombre = req.body.nombre
-                        res.send('El usario ha sido actualizado')
-                    } else if (req.body.apellido !== undefined) {
-                        usuarios[i].apellido = req.body.apellido
-                        res.send('El usario ha sido actualizado')
-                    }
+        let method = wichMethod(req.body.method)
+        let flag = false
+        switch (method) {
+            case 'id':
+                if (getIndexById(req.body.id) != undefined) {
+                    updateUser(getIndexById(req.body.id), createData(req.body), method)
+                    flag = true
                 }
-                i++
-                if (usuarios.length < i)
-                    aux = false
-                else {
-                    aux = true
-                    res.send('El id proporcionado es incorrecto')
+                break
+            case 'nombre':
+                if (getIdByName(req.body.nombre, req.body.apellido) != undefined) {
+                    updateUser(getIndexById(getIdByName(req.body.nombre, req.body.apellido)), createData(req.body), method)
+                    flag = true
                 }
+        }
 
-            }
-        }
-        else {
-            res.send('Se necesita el id del usuario para poder modificarlo')
-        }
+        if (flag)
+            res.send('Usuario ha sido actualizado')
+        else
+            res.send('No se ha encontrado ese usuario')
 
     }
+
 
 })
 
