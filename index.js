@@ -5,7 +5,6 @@ const app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
-let contador = 0
 
 let usuarios = []
 
@@ -30,12 +29,43 @@ function areThereMany() {
     else
         return false
 }
-function deleteUser() {
 
+function move() {
+    if (usuarios.length != 0)
+        for (let index = 0; index < usuarios.length; index++) {
+            usuarios[index].id = index
+        }
 }
-function getUserByName() {
 
+function deleteUser(index) {
+    usuarios.splice(index, 1)
 }
+
+function getIndexById(id) {
+    let i
+    for (let index = 0; index < usuarios.length; index++) {
+        if (id == usuarios[index].id)
+            i = index
+    }
+    return i
+}
+
+function getIdByName(name, lastname) {
+    let id
+    for (let index = 0; index < usuarios.length; index++) {
+        if (name == usuarios[index].nombre && lastname == usuarios[index].apellido)
+            id = index
+    }
+    return id
+}
+
+function wichMethod(body) {
+    if (body.id != undefined)
+        return 'id'
+    else if (body.nombre != undefined && body.apellido != undefined)
+        return 'nombre'
+}
+
 /* Post usuario
  * No poder agregar un usuario repetido
  * Nombres sin números ni signos solo letras
@@ -48,8 +78,8 @@ app.post('/usuario', function (req, res) {
 
     let ranges = [{ "begin": "65", "end": "90" }, { "begin": "97", "end": "172" }]
 
-    usuarios.forEach(usr => {
-        if (usr.nombre == req.body.nombre && usr.apellido == req.body.apellido) {
+    usuarios.forEach(usuario => {
+        if (usuario.nombre == req.body.nombre && usuario.apellido == req.body.apellido) {
             conditions["just_once"] = false
         }
     })
@@ -59,7 +89,7 @@ app.post('/usuario', function (req, res) {
 
     if (conditions["just_letters"] && conditions["just_once"]) {
         usuario = {
-            id: contador++,
+            id: usuarios.length,
             nombre: req.body.nombre,
             apellido: req.body.apellido
         }
@@ -126,8 +156,9 @@ app.get('/usuario/nombre/:nombre', function (req, res) {
     else
         res.send('No hay usuarios creados')
 })
-/*Get usuario
- *Poder buscar por apellido
+
+/* Get usuario
+ * Poder buscar por apellido
  */
 app.get('/usuario/apellido/:apellido', function (req, res) {
     if (areThereMany()) {
@@ -157,40 +188,35 @@ app.delete('/usuario', function (req, res) {
     if (!areThereMany())
         res.send('No hay usuarios creados')
     else {
-        if (req.body.nombre !== undefined && req.body.apellido !== undefined) {
-            for (let i = 0; i <= usuarios.length; i++) {
-                if (req.body.nombre == usuarios[i].nombre && req.body.apellido == usuarios[i].apellido) {
-                    usuarios.splice(i, 1)
+        let method = wichMethod(req.body)
+        switch (method) {
+            case 'id':
+                if (req.body.id != undefined) {
+                    deleteUser(getIndexById(req.body.id))
+                    move()
                     flag = true
                 } else {
                     flag = false
                 }
-            }
-        } else if (req.body.id != undefined) {
-            for (let i = 0; i <= usuarios.length; i++) {
-                if (req.body.id == usuarios[i].id) {
-                    usuarios.splice(i, 1)
-                    flag = true
+                break
 
-                } else {
+            case 'nombre':
+                if (getIdByName(req.body.nombre, req.body.apellido) != undefined) {
+                    deleteUser(getIndexById(getIdByName(req.body.nombre, req.body.apellido)))
+                    move()
+                    flag = true
+                }
+                else {
                     flag = false
                 }
-            }
+                break
 
-        } else {
-            flag = false
         }
-        if (flag) {
-            if (usuarios.length != 0)
-                for (let index = 0; index < usuarios.length; index++) {
-                    usuarios[index].id = index
-                }
-            res.send('Usuario eliminado')
-        }
-        else
-            res.send('El usuario no se ha encontrado')
-
     }
+    if (flag)
+        res.send('Usuario ha sido eliminado')
+    else
+        res.send('No se ha encontrado ese usuario')
 
 })
 /*
@@ -207,8 +233,6 @@ app.put('/usuario', function (req, res) {
             let i = 0
             while (aux == false) {
                 if (req.body.id == usuarios[i].id) {
-                    console.log(req.body.id)
-                    console.log(usuarios[i].id)
                     aux = true
                     if (req.body.nombre !== undefined && req.body.apellido !== undefined) {
                         usuarios[i].nombre = req.body.nombre
