@@ -17,7 +17,10 @@ let usuario = {
 function validateCharacters(string, firstRange, secondRange) {
     let flag = false
     for (let index = 0; index < string.length; index++) {
-        if ((string.charCodeAt(index) < firstRange.begin || string.charCodeAt(index) > firstRange.end) && (string.charCodeAt(index) < secondRange.begin || string.charCodeAt(index) > secondRange.end))
+        if ((string.charCodeAt(index) < firstRange.begin
+            || string.charCodeAt(index) > firstRange.end)
+            && (string.charCodeAt(index) < secondRange.begin
+                || string.charCodeAt(index) > secondRange.end))
             flag = true
     }
     return flag
